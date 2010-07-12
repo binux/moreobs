@@ -254,6 +254,40 @@ BYTEARRAY UTIL_ExtractHexNumbers( string s )
 	return result;
 }
 
+BYTEARRAY UTIL_SubByteArray( BYTEARRAY &b, unsigned int start, unsigned int end )
+{
+	if( start < b.size( ) )
+	{
+		if( end < b.size( ) )
+			return BYTEARRAY( b.begin( ) + start, b.begin( ) + end );
+		else
+			return BYTEARRAY( b.begin( ) + start, b.end( ) );
+	}
+
+	return BYTEARRAY( );
+}
+
+string UTIL_ToString( BYTEARRAY &b, unsigned int start )
+{
+	// start searching the byte array at position 'start' for the first null value
+	// if found, return the subarray from 'start' to the null value but not including the null value
+
+	if( start < b.size( ) )
+	{
+		for( unsigned int i = start; i < b.size( ); i++ )
+		{
+			if( b[i] == 0 )
+				return string( b.begin( ) + start, b.begin( ) + i );
+		}
+
+		// no null value found, return the rest of the byte array
+
+		return string( b.begin( ) + start, b.end( ) );
+	}
+
+	return string( );
+}
+
 string UTIL_ToString( unsigned long i )
 {
 	string result;

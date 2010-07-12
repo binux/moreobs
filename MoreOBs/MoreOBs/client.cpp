@@ -3,6 +3,7 @@
 #include "client.h"
 #include "moreobs.h"
 #include "protocol.h"
+#include "game.h"
 
 #include <boost/bind.hpp>
 
@@ -18,6 +19,7 @@ CClient::CClient(boost::asio::io_service* io_service , CMoreObs* moreobs)
 	m_state = CLIENT_STATE_HAND_SHAKING;
 	m_type = CLIENT_TYPE_UNDEFINE;
 	m_lastRecv = m_lastSend = GetTime();
+
 }
 
 CClient::~CClient ( )
@@ -37,7 +39,7 @@ void CClient::Run ( )
 	if(!t_buffer)
 	{
 		t_buffer = new unsigned char[1024];
-		m_socket->async_receive(boost::asio::buffer(t_buffer,1024),boost::bind(&CClient::handle_read,this,t_buffer,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred));
+		m_socket->async_read_some(boost::asio::buffer(t_buffer,1024),boost::bind(&CClient::handle_read,this,t_buffer,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred));
 	}
 }
 
@@ -45,10 +47,17 @@ void CClient::handle_read ( unsigned char * t_buffer , const boost::system::erro
 {
 	if(!error)
 	{
-		//DEBUG_Print(UTIL_CreateByteArray(t_buffer,bytes_transferred),DEBUG_LEVEL_PACKET);
-		m_lastRecv = GetTime();
-		b_receive.append((char *)t_buffer,bytes_transferred);
-		m_socket->async_receive(boost::asio::buffer(t_buffer,1024),boost::bind(&CClient::handle_read,this,t_buffer,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred));
+		try
+		{
+			//DEBUG_Print(UTIL_CreateByteArray(t_buffer,bytes_transferred),DEBUG_LEVEL_PACKET);
+			m_lastRecv = GetTime();
+			b_receive.insert( b_receive.size(), (char *)t_buffer, bytes_transferred);
+			m_socket->async_read_some(boost::asio::buffer(t_buffer,1024),boost::bind(&CClient::handle_read,this,t_buffer,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred));
+		}
+		catch(boost::system::system_error& e)
+		{
+			CONSOLE_Print(string("[CLIENT]") + e.what() , DEBUG_LEVEL_ERROR);
+		}
 	}
 	else
 	{
@@ -56,9 +65,7 @@ void CClient::handle_read ( unsigned char * t_buffer , const boost::system::erro
 		return ;
 	}
 
-	//Do extract packet
-	if(!m_socket->available())
-		ExtractPacket();
+	ExtractPacket();
 }
 
 void CClient::Send ( string s )
@@ -83,7 +90,7 @@ void CClient::ExtractPacket( )
 			Send( UTIL_CreateByteArray ( (uint32_t)LOGIN_PROTOCOL,false ) );
 
 			b_receive = b_receive.substr( 4 );
-			t_bytes = BYTEARRAY( t_bytes.begin( ) + 4, t_bytes.end( ) );
+			t_bytes = UTIL_SubByteArray( t_bytes, 4, t_bytes.size( ) );
 
 			m_state = CLIENT_STATE_NEGOTIATING;
 		}
@@ -94,7 +101,10 @@ void CClient::ExtractPacket( )
 		if(t_bytes[0] == HEADER_1 && t_bytes[1] == HEADER_2 )
 		{
 			uint16_t len = UTIL_ByteArrayToUInt16(t_bytes,false,3);
-			BYTEARRAY t_packet = BYTEARRAY( t_bytes.begin( ) + 5, t_bytes.begin( ) + len );
+			if( len > t_bytes.size() )
+				break;
+
+			BYTEARRAY t_packet = UTIL_SubByteArray( t_bytes, 5, len );
 			//DEBUG_Print( BYTEARRAY( t_bytes.begin( ) , t_bytes.begin( ) + len ),DEBUG_LEVEL_PACKET);
 			switch(t_bytes[2])
 			{
@@ -123,6 +133,7 @@ void CClient::ExtractPacket( )
 						m_game = m_protocol->RECV_CREATEREQUEST(t_packet , m_username );
 						if(m_game)
 						{
+							CONSOLE_Print("[CLIENT] created a new game :" + m_game->GetGameName( ) , DEBUG_LEVEL_MESSAGE);
 							Send(m_protocol->SEND_CREATEREQUEST( m_game ));
 							m_state = CLIENT_STATE_UPDATA;
 						}
@@ -184,8 +195,15 @@ void CClient::ExtractPacket( )
 					DEBUG_Print("[CLIENT] unknow packet type : " + UTIL_ToString(t_bytes[2]) ,DEBUG_LEVEL_ERROR );
 					break;
 			}
-			b_receive = b_receive.substr( len );
-			t_bytes = BYTEARRAY( t_bytes.begin( ) + len, t_bytes.end( ) );
+			try
+			{
+				b_receive = b_receive.substr( len );
+				t_bytes = UTIL_SubByteArray( t_bytes, len, t_bytes.size( ) );
+			}
+			catch(boost::system::system_error& e)
+			{
+				CONSOLE_Print(string("[CLIENT]") + e.what() , DEBUG_LEVEL_ERROR);
+			}
 		}
 		else
 		{
@@ -198,11 +216,7 @@ void CClient::ExtractPacket( )
 
 void CClient::DoSend ( )
 {
-	if(b_send.empty())
-		return ;
-
 	m_lastSend = GetTime();
-	size_t len;
-	len = m_socket->send( boost::asio::buffer(b_send) );
-	b_send = b_send.substr( len );
+	while(!b_send.empty())
+		b_send = b_send.substr( m_socket->send( boost::asio::buffer(b_send) ) );
 }

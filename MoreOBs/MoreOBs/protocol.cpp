@@ -104,21 +104,21 @@ bool Protocol::RECV_AUTHORIZING ( BYTEARRAY b , uint32_t* clientVersion , uint32
 	if(b.size() < 12 )
 		return false;
 
-	BYTEARRAY::iterator t_pos = b.begin();
+	uint32_t t_pos = 0;
 	if(clientName)
-		*clientName = string( t_pos , find( t_pos ,b.end(),0x00) );
+		*clientName = UTIL_ToString(b,t_pos);
 	t_pos += clientName->size() + 1;
 	if(clientVersion)
-		*clientVersion = UTIL_ByteArrayToUInt32(b,false, t_pos - b.begin() );
+		*clientVersion = UTIL_ByteArrayToUInt32(b,false, t_pos );
 	t_pos += 4;
 	if(protocolVersion)
-		*protocolVersion = UTIL_ByteArrayToUInt32(b,false, t_pos - b.begin() );
+		*protocolVersion = UTIL_ByteArrayToUInt32(b,false, t_pos );
 	t_pos += 4;
 	if(username)
-		*username = string( t_pos , find( t_pos ,b.end(),0x00) );
+		*username = UTIL_ToString(b,t_pos);
 	t_pos += username->size() + 1;
 	if(password)
-		*password = string( t_pos , find( t_pos ,b.end(),0x00) );
+		*password = UTIL_ToString(b,t_pos);
 
 	return true;
 }
@@ -128,16 +128,16 @@ CGame* Protocol::RECV_CREATEREQUEST ( BYTEARRAY b , string streamer )
 	if(b.size() < 20 )
 		return false;
 
-	BYTEARRAY::iterator t_pos = b.begin();
-	uint32_t t_replayId = UTIL_ByteArrayToUInt32(b,false,t_pos -b.begin() ); t_pos += 4;
-	uint32_t t_gameId  = UTIL_ByteArrayToUInt32(b,false,t_pos -b.begin() ); t_pos += 4;
-	string t_gameName = string( t_pos , find( t_pos ,b.end(),0x00) ); t_pos += t_gameName.size() + 1;
-	string t_players = string( t_pos , find( t_pos ,b.end(),0x00) ); t_pos += t_players.size() + 1;
-	uint32_t t_startTime =  UTIL_ByteArrayToUInt32(b,false,t_pos -b.begin() ); t_pos += 4;
-	BYTEARRAY t_version = BYTEARRAY(t_pos , t_pos+8-1);t_pos += 12;
-	BYTEARRAY t_options = BYTEARRAY(t_pos , t_pos+20-1);t_pos += 20;
-	string t_map = string( t_pos , find( t_pos ,b.end(),0x00) ); t_pos += t_map.size() + 1;
-	BYTEARRAY t_mapOptions = BYTEARRAY(t_pos , t_pos+8-1);
+	uint32_t t_pos = 0;
+	uint32_t t_replayId = UTIL_ByteArrayToUInt32(b,false,t_pos ); t_pos += 4;
+	uint32_t t_gameId  = UTIL_ByteArrayToUInt32(b,false,t_pos ); t_pos += 4;
+	string t_gameName = UTIL_ToString(b,t_pos); t_pos += t_gameName.size() + 1;
+	string t_players = UTIL_ToString(b,t_pos); t_pos += t_players.size() + 1;
+	uint32_t t_startTime =  UTIL_ByteArrayToUInt32(b,false,t_pos ); t_pos += 4;
+	BYTEARRAY t_version = UTIL_SubByteArray( b, t_pos, t_pos+8-1);t_pos += 12;
+	BYTEARRAY t_options = UTIL_SubByteArray( b, t_pos, t_pos+20-1);t_pos += 20;
+	string t_map = UTIL_ToString(b,t_pos); t_pos += t_map.size() + 1;
+	BYTEARRAY t_mapOptions = UTIL_SubByteArray( b, t_pos, t_pos+8-1);
 
 	CGame* t_game = new CGame(streamer,t_gameName,t_replayId,t_gameId,t_players,t_startTime,t_version,t_options,t_map,t_mapOptions);
 
@@ -150,7 +150,7 @@ bool Protocol::RECV_GAMEDETAILU ( BYTEARRAY b , CGame* game )
 	{
 		if(game->GetState() == STATUS_COMINGUPNEXT)
 		{
-			game->SetDetials( BYTEARRAY( b.begin()+4 , b.end() ) );
+			game->SetDetials( UTIL_SubByteArray( b, 4, b.size( ) ) );
 			game->SetState(STATUS_ABOUTTOSTART);
 			return true;
 		}
@@ -170,7 +170,7 @@ bool Protocol::RECV_GAMESTARTU ( BYTEARRAY b , CGame* game )
 	{
 		if(game->GetState() == STATUS_ABOUTTOSTART)
 		{
-			game->SetStartHead( BYTEARRAY( b.begin() , b.begin()+8 ) );
+			game->SetStartHead( UTIL_SubByteArray( b, 0, 8 ) );
 			game->SetStartTime( UTIL_ByteArrayToUInt32(b,false,9) );
 			game->SetState( STATUS_STARTED );
 
@@ -195,7 +195,7 @@ bool Protocol::RECV_GAMEDATAU ( BYTEARRAY b , CGame* game )
 	{
 		if(game->GetState() == STATUS_STARTED || game->GetState() == STATUS_LIVE)
 		{
-			game->SetGameData( BYTEARRAY( b.begin()+8 ,b.end() ) );
+			game->SetGameData( UTIL_SubByteArray( b, 8, b.size() ) );
 			game->SetState(STATUS_LIVE);
 
 			return true;

@@ -42,9 +42,11 @@ BYTEARRAY UTIL_ExtractCString( BYTEARRAY &b, unsigned int start );
 unsigned char UTIL_ExtractHex( BYTEARRAY &b, unsigned int start, bool reverse );
 BYTEARRAY UTIL_ExtractNumbers( string s, unsigned int count );
 BYTEARRAY UTIL_ExtractHexNumbers( string s );
+BYTEARRAY UTIL_SubByteArray( BYTEARRAY &b, unsigned int start, unsigned int end );
 
 // conversions
 
+string UTIL_ToString( BYTEARRAY &b, unsigned int start );
 string UTIL_ToString( unsigned long i );
 string UTIL_ToString( unsigned short i );
 string UTIL_ToString( unsigned int i );
