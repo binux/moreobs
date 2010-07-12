@@ -1,0 +1,24 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MoreOBs", "MoreOBs\MoreOBs.vcxproj", "{C372A426-FE86-4889-A0DE-3E4C7527CB61}"
+EndProject
+Global
+	GlobalSection(SubversionScc) = preSolution
+		Svn-Managed = True
+		Manager = AnkhSVN - Subversion Support for Visual Studio
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C372A426-FE86-4889-A0DE-3E4C7527CB61}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C372A426-FE86-4889-A0DE-3E4C7527CB61}.Debug|Win32.Build.0 = Debug|Win32
+		{C372A426-FE86-4889-A0DE-3E4C7527CB61}.Release|Win32.ActiveCfg = Release|Win32
+		{C372A426-FE86-4889-A0DE-3E4C7527CB61}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
