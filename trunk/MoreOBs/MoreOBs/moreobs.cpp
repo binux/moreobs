@@ -19,7 +19,7 @@ CMoreObs::CMoreObs ( CConfig *cfg )
 
 	try
 	{
-		DEBUG_Print("[MOREOBS] start listening !",DEBUG_LEVEL_MESSAGE);
+		CONSOLE_Print("[MOREOBS] start listening !",DEBUG_LEVEL_MESSAGE);
 		m_ioService = new boost::asio::io_service;
 		m_acceptor = new boost::asio::ip::tcp::acceptor(*m_ioService,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(),m_port));
 		CClient * t_socket = new CClient(m_ioService,this);
@@ -27,7 +27,7 @@ CMoreObs::CMoreObs ( CConfig *cfg )
 	}
 	catch(boost::system::system_error& e)
 	{
-		DEBUG_Print(string("[MOREOBS]") + e.what() , DEBUG_LEVEL_ERROR);
+		CONSOLE_Print(string("[MOREOBS]") + e.what() , DEBUG_LEVEL_ERROR);
 	}
 }
 
@@ -51,9 +51,16 @@ void CMoreObs::handle_accept( CClient * t_socket , const boost::system::error_co
 {
 	if (!error)
 	{
-		t_socket->Run();
-		DEBUG_Print("[MOREOBS] Get a new client !",DEBUG_LEVEL_PACKET);
-		CClient * t_socket = new CClient(m_ioService,this);
-		m_acceptor->async_accept(*t_socket->GetSocket(),boost::bind(&CMoreObs::handle_accept,this,t_socket,boost::asio::placeholders::error));
+		try
+		{
+			t_socket->Run();
+			DEBUG_Print("[MOREOBS] Get a new client !",DEBUG_LEVEL_PACKET);
+			CClient * t_socket = new CClient(m_ioService,this);
+			m_acceptor->async_accept(*t_socket->GetSocket(),boost::bind(&CMoreObs::handle_accept,this,t_socket,boost::asio::placeholders::error));
+		}
+		catch(boost::system::system_error& e)
+		{
+			CONSOLE_Print(string("[MOREOBS]") + e.what() , DEBUG_LEVEL_ERROR);
+		}
 	}
 }
