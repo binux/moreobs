@@ -89,6 +89,26 @@ BYTEARRAY Protocol::SEND_CREATEREQUEST ( CGame* game )
 	return result;
 }
 
+BYTEARRAY Protocol::SEND_FINISHEDU ( CGame* game )
+{
+	if( game->GetState( ) == STATUS_COMPLETED )
+	{
+		BYTEARRAY result;
+	
+		result.push_back(HEADER_1);
+		result.push_back(HEADER_2);
+		result.push_back(PACKET_TYPE_FINISHEDU);
+		result.push_back(0x00);
+		result.push_back(0x00);
+		UTIL_AppendByteArray(result, game->GetId(), false);
+		UTIL_AppendByteArray(result, (uint32_t)0, false);
+
+		MakeLenth(result);
+		return result;
+	}
+
+	return BYTEARRAY( );
+}
 
 //========================================================================================================
 uint32_t Protocol::RECV_NEGOTIATION ( BYTEARRAY b )
@@ -234,6 +254,7 @@ bool Protocol::RECV_FINISHEDU ( BYTEARRAY b , CGame* game )
 	{
 		if(game->GetState() == STATUS_LIVE)
 		{
+			game->SetLastedTime(UTIL_ByteArrayToUInt32(b,false,4));
 			game->SetState(STATUS_COMPLETED);
 			return true;
 		}
