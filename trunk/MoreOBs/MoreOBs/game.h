@@ -22,6 +22,7 @@ private:
 	uint32_t m_newId;
 	uint32_t m_createTime;
 	uint32_t m_startTime;
+	uint32_t m_lastedTime;
 	BYTEARRAY m_version;
 	BYTEARRAY m_options;
 	BYTEARRAY m_mapOptions;
@@ -39,6 +40,7 @@ public:
 	uint32_t GetReplayId ( )	{ return m_replayId; }
 	uint32_t GetId ( );
 	uint32_t GetStartTime ( )	{ return m_startTime; }
+	uint32_t GetLastedTime ( )	{ return m_lastedTime; }
 	uint32_t GetState ( )		{ return m_state; }
 	BYTEARRAY GetVersion ( )	{ return m_version; }
 	BYTEARRAY GetOptions ( )	{ return m_options; }
@@ -51,6 +53,7 @@ public:
 	void SetStartHead ( BYTEARRAY& b )	{ m_startHead.assign( b.begin() , b.end() ); }
 	void SetState ( uint32_t i )		{ m_state = i; }
 	void SetStartTime ( uint32_t i )	{ m_startTime = i; }
+	void SetLastedTime ( uint32_t i )	{ m_lastedTime = i; }
 	void SetGameData ( BYTEARRAY& b )	{ m_data.push_back(b); }
 };
 

@@ -170,8 +170,13 @@ void CClient::ExtractPacket( )
 				case PACKET_TYPE_FINISHEDU       :
 					if(m_type == CLIENT_TYPE_RECORDER && m_state == CLIENT_STATE_UPDATA )
 					{
+						DEBUG_Print(t_packet,4);
 						if(m_protocol->RECV_FINISHEDU(t_packet,m_game))
+						{
+							DEBUG_Print(m_protocol->SEND_FINISHEDU(m_game),4);
+							Send(m_protocol->SEND_FINISHEDU(m_game));
 							m_state = CLIENT_STATE_LOGIN;
+						}
 					}
 					break;
 				/*-----------------------only client will use this-----------------------------*/

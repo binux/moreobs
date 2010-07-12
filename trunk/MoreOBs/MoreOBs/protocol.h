@@ -53,6 +53,7 @@ public :
 	BYTEARRAY SEND_AUTHORIZING		( string serverName , string about , string information ,string ircAdress , string webAdress);
 	BYTEARRAY SEND_SERVERDETAIL		( uint32_t maxUploadRate );
 	BYTEARRAY SEND_CREATEREQUEST	( CGame* game );
+	BYTEARRAY SEND_FINISHEDU		( CGame* game );
 
 	//RECV
 	uint32_t RECV_NEGOTIATION		( BYTEARRAY b );
