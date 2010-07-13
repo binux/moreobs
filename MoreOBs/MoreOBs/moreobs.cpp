@@ -3,19 +3,21 @@
 #include "moreobs.h"
 #include "client.h"
 #include "protocol.h"
+#include "gamelist.h"
 
 #include <boost/bind.hpp>
 
 CMoreObs::CMoreObs ( CConfig *cfg )
 {
 	m_port = cfg->GetInt("listen_port",10383);
-	protocol = new Protocol();
+	protocol = new Protocol( );
 	serverName = cfg->GetString("server_name","MoreObs");
 	about = cfg->GetString("server_about","A personal WTV server!");
 	information = cfg->GetString("server_information","By Binux@CN"); 
 	ircAdress = cfg->GetString("server_irc","none");
 	webAdress = cfg->GetString("server_web","binux.yo2.cn");
-	uploadRate = cfg->GetInt("server_uploadRate",0);
+	uploadRate = cfg->GetInt("server_uploadRate",1000000);
+	gameList = new CGameList( );
 
 	try
 	{

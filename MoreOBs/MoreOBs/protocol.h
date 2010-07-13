@@ -43,6 +43,7 @@
 #define UPLOAD_PROTOCOL     0x01000601
 
 class CGame;
+class CGameList;
 
 class Protocol
 {
@@ -54,16 +55,20 @@ public :
 	BYTEARRAY SEND_SERVERDETAIL		( uint32_t maxUploadRate );
 	BYTEARRAY SEND_CREATEREQUEST	( CGame* game );
 	BYTEARRAY SEND_FINISHEDU		( CGame* game );
+	BYTEARRAY SEND_GAMELIST			( CGameList* gameList );
+	BYTEARRAY SEND_GAMEDETAIL		( CGame* game );
 
 	//RECV
-	uint32_t RECV_NEGOTIATION		( BYTEARRAY b );
-	bool RECV_AUTHORIZING			( BYTEARRAY b , uint32_t* clientVersion , uint32_t* protocolVersion , string* clientName , string* username ,string* password );
-	CGame* RECV_CREATEREQUEST		( BYTEARRAY b , string streamer );
-	bool RECV_GAMEDETAILU			( BYTEARRAY b , CGame* game );
-	bool RECV_GAMESTARTU			( BYTEARRAY b , CGame* game );
-	bool RECV_GAMEDATAU				( BYTEARRAY b , CGame* game );
-	bool RECV_GAMEEND				( BYTEARRAY b , CGame* game );
-	bool RECV_FINISHEDU				( BYTEARRAY b , CGame* game );
+	uint32_t RECV_NEGOTIATION		( BYTEARRAY& b );
+	bool RECV_AUTHORIZING			( BYTEARRAY& b , uint32_t* clientVersion , uint32_t* protocolVersion , string* clientName , string* username ,string* password );
+	CGame* RECV_CREATEREQUEST		( BYTEARRAY& b , string streamer );
+	bool RECV_GAMEDETAILU			( BYTEARRAY& b , CGame* game );
+	bool RECV_GAMESTARTU			( BYTEARRAY& b , CGame* game );
+	bool RECV_GAMEDATAU				( BYTEARRAY& b , CGame* game );
+	bool RECV_GAMEEND				( BYTEARRAY& b , CGame* game );
+	bool RECV_FINISHEDU				( BYTEARRAY& b , CGame* game );
+	uint32_t RECV_GETLIST			( BYTEARRAY& b );
+	uint32_t RECV_GETDETAIL			( BYTEARRAY& b );
 
 private :
 	void MakeLenth ( BYTEARRAY& b);

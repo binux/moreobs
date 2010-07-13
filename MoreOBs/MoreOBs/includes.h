@@ -41,10 +41,10 @@ typedef boost::uint_fast32_t   uint_fast32_t   ;
 #include <iomanip>
 #include <algorithm>
 #include <map>
-#include <queue>
-#include <set>
+//#include <set>
 #include <string>
 #include <vector>
+#include <list>
 
 using namespace std;
 

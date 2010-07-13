@@ -42,7 +42,7 @@ BYTEARRAY UTIL_ExtractCString( BYTEARRAY &b, unsigned int start );
 unsigned char UTIL_ExtractHex( BYTEARRAY &b, unsigned int start, bool reverse );
 BYTEARRAY UTIL_ExtractNumbers( string s, unsigned int count );
 BYTEARRAY UTIL_ExtractHexNumbers( string s );
-BYTEARRAY UTIL_SubByteArray( BYTEARRAY &b, unsigned int start, unsigned int end );
+BYTEARRAY UTIL_SubByteArray( BYTEARRAY &b, unsigned int start, int size = -1 );
 
 // conversions
 

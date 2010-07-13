@@ -13,6 +13,10 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C372A426-FE86-4889-A0DE-3E4C7527CB61}</ProjectGuid>
     <RootNamespace>MoreOBs</RootNamespace>
+    <SccProjectName>Svn</SccProjectName>
+    <SccAuxPath>Svn</SccAuxPath>
+    <SccLocalPath>Svn</SccLocalPath>
+    <SccProvider>SubversionScc</SccProvider>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -66,6 +70,7 @@
     <ClInclude Include="client.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="gamelist.h" />
     <ClInclude Include="includes.h" />
     <ClInclude Include="moreobs.h" />
     <ClInclude Include="protocol.h" />
@@ -75,6 +80,7 @@
     <ClCompile Include="client.cpp" />
     <ClCompile Include="config.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="gamelist.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="moreobs.cpp" />
     <ClCompile Include="protocol.cpp" />
