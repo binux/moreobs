@@ -4,6 +4,7 @@
 #include "moreobs.h"
 #include "protocol.h"
 #include "game.h"
+#include "gamelist.h"
 
 #include <boost/bind.hpp>
 
@@ -61,6 +62,7 @@ void CClient::handle_read ( unsigned char * t_buffer , const boost::system::erro
 	}
 	else
 	{
+		DEBUG_Print("[CLIENT] Connection closed cleanly by peer!",DEBUG_LEVEL_PACKET);
 		delete this;
 		return ;
 	}
@@ -90,7 +92,7 @@ void CClient::ExtractPacket( )
 			Send( UTIL_CreateByteArray ( (uint32_t)LOGIN_PROTOCOL,false ) );
 
 			b_receive = b_receive.substr( 4 );
-			t_bytes = UTIL_SubByteArray( t_bytes, 4, t_bytes.size( ) );
+			t_bytes = UTIL_SubByteArray( t_bytes, 4 );
 
 			m_state = CLIENT_STATE_NEGOTIATING;
 		}
@@ -104,8 +106,8 @@ void CClient::ExtractPacket( )
 			if( len > t_bytes.size() )
 				break;
 
-			BYTEARRAY t_packet = UTIL_SubByteArray( t_bytes, 5, len );
-			//DEBUG_Print( BYTEARRAY( t_bytes.begin( ) , t_bytes.begin( ) + len ),DEBUG_LEVEL_PACKET);
+			BYTEARRAY t_packet = UTIL_SubByteArray( t_bytes, 5, len - 5 );
+			//DEBUG_Print( BYTEARRAY( t_bytes.begin( ) , t_bytes.begin( ) + len ), DEBUG_LEVEL_PACKET);
 			switch(t_bytes[2])
 			{
 				case PACKET_TYPE_NEGOTIATING     :
@@ -131,6 +133,7 @@ void CClient::ExtractPacket( )
 					if(m_type == CLIENT_TYPE_RECORDER && m_state == CLIENT_STATE_LOGIN )
 					{
 						m_game = m_protocol->RECV_CREATEREQUEST(t_packet , m_username );
+						m_game->SetGameId( m_moreobs->gameList->NewGame(m_game) );
 						if(m_game)
 						{
 							CONSOLE_Print("[CLIENT] created a new game :" + m_game->GetGameName( ) , DEBUG_LEVEL_MESSAGE);
@@ -164,25 +167,30 @@ void CClient::ExtractPacket( )
 					if(m_type == CLIENT_TYPE_RECORDER && m_state == CLIENT_STATE_UPDATA )
 					{
 						if(m_protocol->RECV_GAMEEND(t_packet,m_game))
+						{
 							m_state = CLIENT_STATE_LOGIN;
+							m_game = NULL;
+						}
 					}
 					break;
 				case PACKET_TYPE_FINISHEDU       :
 					if(m_type == CLIENT_TYPE_RECORDER && m_state == CLIENT_STATE_UPDATA )
 					{
-						DEBUG_Print(t_packet,4);
 						if(m_protocol->RECV_FINISHEDU(t_packet,m_game))
 						{
-							DEBUG_Print(m_protocol->SEND_FINISHEDU(m_game),4);
 							Send(m_protocol->SEND_FINISHEDU(m_game));
 							m_state = CLIENT_STATE_LOGIN;
+							m_game = NULL;
 						}
 					}
 					break;
 				/*-----------------------only client will use this-----------------------------*/
 				case PACKET_TYPE_GETLIST         :
+					//m_protocol->RECV_GETLIST(t_packet);
+					Send(m_protocol->SEND_GAMELIST( m_moreobs->gameList ));
 					break;
 				case PACKET_TYPE_DETAIL          :
+					Send( m_protocol->SEND_GAMEDETAIL( m_moreobs->gameList->FindGameById( m_protocol->RECV_GETDETAIL( t_packet ) ) ) );
 					break;
 				case PACKET_TYPE_SUBSCRIBGAME    :
 					break;
@@ -203,7 +211,7 @@ void CClient::ExtractPacket( )
 			try
 			{
 				b_receive = b_receive.substr( len );
-				t_bytes = UTIL_SubByteArray( t_bytes, len, t_bytes.size( ) );
+				t_bytes = UTIL_SubByteArray( t_bytes, len );
 			}
 			catch(boost::system::system_error& e)
 			{

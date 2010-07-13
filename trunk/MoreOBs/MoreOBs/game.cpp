@@ -10,7 +10,7 @@ CGame::CGame ( string streamer , string gameName , uint32_t replayId , uint32_t 
 	m_streamer = streamer ;
 	m_replayId = replayId;
 	m_originalId = gameId;
-	m_newId = gameId;	//todotodo
+	m_newId = 0;	//todotodo
 	m_createTime = createTime;
 	m_startTime = 0;
 	m_version = version;

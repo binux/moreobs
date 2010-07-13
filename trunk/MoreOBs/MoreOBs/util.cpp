@@ -142,7 +142,7 @@ void UTIL_AppendByteArray( BYTEARRAY &b, string append, bool terminator )
 
 	b.insert( b.end( ), append.begin( ), append.end( ) );
 
-	if( terminator )
+	if( terminator && append.back( ) != 0 )
 		b.push_back( 0 );
 }
 
@@ -152,7 +152,7 @@ void UTIL_AppendByteArrayFast( BYTEARRAY &b, string &append, bool terminator )
 
 	b.insert( b.end( ), append.begin( ), append.end( ) );
 
-	if( terminator )
+	if( terminator && append.back( ) != 0 )
 		b.push_back( 0 );
 }
 
@@ -254,12 +254,12 @@ BYTEARRAY UTIL_ExtractHexNumbers( string s )
 	return result;
 }
 
-BYTEARRAY UTIL_SubByteArray( BYTEARRAY &b, unsigned int start, unsigned int end )
+BYTEARRAY UTIL_SubByteArray( BYTEARRAY &b, unsigned int start, int size )
 {
 	if( start < b.size( ) )
 	{
-		if( end < b.size( ) )
-			return BYTEARRAY( b.begin( ) + start, b.begin( ) + end );
+		if( size != -1 && start + size < b.size( ) )
+			return BYTEARRAY( b.begin( ) + start, b.begin( ) + start + size );
 		else
 			return BYTEARRAY( b.begin( ) + start, b.end( ) );
 	}

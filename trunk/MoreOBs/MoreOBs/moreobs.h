@@ -6,6 +6,8 @@
 class CConfig;
 class CClient;
 class Protocol;
+class CGame;
+class CGameList;
 
 class CMoreObs
 {
@@ -21,6 +23,7 @@ public:
 	string ircAdress;
 	string webAdress;
 	uint32_t uploadRate;
+	CGameList* gameList;
 
 	CMoreObs( CConfig *cfg );
 	~CMoreObs(void);

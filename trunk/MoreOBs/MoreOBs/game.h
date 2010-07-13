@@ -33,28 +33,30 @@ private:
 
 public: 
 	CGame ( string streamer , string gameName , uint32_t replayId , uint32_t gameId , string players , uint32_t createTime , BYTEARRAY version , BYTEARRAY options , string map , BYTEARRAY mapOptions );
-	~CGame ( );
+	//~CGame ( );
 	string GetGameName ( )		{ return m_name; }
 	string GetPlayers ( )		{ return m_players; }
+	string GetStreamer ( )		{ return m_streamer; }
 	string GetMap ( )			{ return m_map; }
 	uint32_t GetReplayId ( )	{ return m_replayId; }
 	uint32_t GetId ( );
 	uint32_t GetStartTime ( )	{ return m_startTime; }
 	uint32_t GetLastedTime ( )	{ return m_lastedTime; }
 	uint32_t GetState ( )		{ return m_state; }
-	BYTEARRAY GetVersion ( )	{ return m_version; }
-	BYTEARRAY GetOptions ( )	{ return m_options; }
-	BYTEARRAY GetMapOptions ( )	{ return m_mapOptions; }
-	BYTEARRAY GetDetails ( )	{ return m_details; }
-	BYTEARRAY GetStartHead ( )	{ return m_startHead; }
+	BYTEARRAY& GetVersion ( )	{ return m_version; }
+	BYTEARRAY& GetOptions ( )	{ return m_options; }
+	BYTEARRAY& GetMapOptions ( )	{ return m_mapOptions; }
+	BYTEARRAY& GetDetails ( )	{ return m_details; }
+	BYTEARRAY& GetStartHead ( )	{ return m_startHead; }
 	vector<BYTEARRAY>& GetGameData ( )	{ return m_data; }
 
-	void SetDetials ( BYTEARRAY& b )	{ m_details.assign(b.begin() , b.end() ); }
+	void SetDetials ( BYTEARRAY& b )	{ m_details.assign( b.begin() , b.end() ); }
 	void SetStartHead ( BYTEARRAY& b )	{ m_startHead.assign( b.begin() , b.end() ); }
 	void SetState ( uint32_t i )		{ m_state = i; }
 	void SetStartTime ( uint32_t i )	{ m_startTime = i; }
 	void SetLastedTime ( uint32_t i )	{ m_lastedTime = i; }
 	void SetGameData ( BYTEARRAY& b )	{ m_data.push_back(b); }
+	void SetGameId ( uint32_t i )		{ m_newId = i; }
 };
 
 #endif

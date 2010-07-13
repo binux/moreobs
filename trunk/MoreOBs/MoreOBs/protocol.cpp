@@ -2,6 +2,7 @@
 #include "protocol.h"
 #include "util.h"
 #include "game.h"
+#include "gamelist.h"
 
 BYTEARRAY Protocol::SEND_HAND_SHAKING ( )
 {
@@ -74,6 +75,9 @@ BYTEARRAY Protocol::SEND_SERVERDETAIL ( uint32_t maxUploadRate )
 
 BYTEARRAY Protocol::SEND_CREATEREQUEST ( CGame* game )
 {
+	if(!game)
+		return BYTEARRAY( );
+
 	BYTEARRAY result;
 	
 	result.push_back(HEADER_1);
@@ -91,6 +95,9 @@ BYTEARRAY Protocol::SEND_CREATEREQUEST ( CGame* game )
 
 BYTEARRAY Protocol::SEND_FINISHEDU ( CGame* game )
 {
+	if(!game)
+		return BYTEARRAY( );
+
 	if( game->GetState( ) == STATUS_COMPLETED )
 	{
 		BYTEARRAY result;
@@ -110,8 +117,64 @@ BYTEARRAY Protocol::SEND_FINISHEDU ( CGame* game )
 	return BYTEARRAY( );
 }
 
+BYTEARRAY Protocol::SEND_GAMELIST ( CGameList* gameList )
+{
+	if(!gameList)
+		return BYTEARRAY( );
+
+	BYTEARRAY result;
+
+	result.push_back(HEADER_1);
+	result.push_back(HEADER_2);
+	result.push_back(PACKET_TYPE_GETLIST);
+	result.push_back(0x00);
+	result.push_back(0x00);
+	UTIL_AppendByteArray(result, GetTime(), false);
+	UTIL_AppendByteArray(result, gameList->GetSize( ), false);
+	UTIL_AppendByteArray(result, gameList->GetSize( ), false);
+
+	foreach( CGame* game, gameList->GetGameList( ) )
+	{
+		UTIL_AppendByteArray(result, game->GetId( ),false);
+		result.push_back((unsigned char)game->GetState( ));
+		UTIL_AppendByteArray(result, game->GetStartTime( ), false);
+		UTIL_AppendByteArray(result,game->GetGameName( ));
+	}
+
+	MakeLenth(result);
+	return result;
+}
+
+BYTEARRAY Protocol::SEND_GAMEDETAIL ( CGame* game )
+{
+	if(!game)
+		return BYTEARRAY( );
+
+	BYTEARRAY result;
+
+	result.push_back(HEADER_1);
+	result.push_back(HEADER_2);
+	result.push_back(PACKET_TYPE_DETAIL);
+	result.push_back(0x00);
+	result.push_back(0x00);
+	UTIL_AppendByteArray(result, game->GetId( ),false);
+	UTIL_AppendByteArray(result, game->GetPlayers( ));
+	UTIL_AppendByteArray(result, game->GetStreamer( ));
+	UTIL_AppendByteArray(result, game->GetLastedTime( ),false);
+	result.insert(result.end(),7,0x00);		//unkonw
+	UTIL_AppendByteArrayFast(result, game->GetVersion( ));
+	UTIL_AppendByteArray(result, game->GetReplayId( ),false);
+	UTIL_AppendByteArrayFast(result, game->GetOptions( ));
+	UTIL_AppendByteArray(result, game->GetMap( ));
+	UTIL_AppendByteArrayFast(result, game->GetMapOptions( ));
+
+	MakeLenth(result);
+	return result;
+}
+
+
 //========================================================================================================
-uint32_t Protocol::RECV_NEGOTIATION ( BYTEARRAY b )
+uint32_t Protocol::RECV_NEGOTIATION ( BYTEARRAY& b )
 {
 	if(b.size() < 5)
 		return 0x00;
@@ -119,7 +182,7 @@ uint32_t Protocol::RECV_NEGOTIATION ( BYTEARRAY b )
 	return (uint32_t)b[0];
 }
 
-bool Protocol::RECV_AUTHORIZING ( BYTEARRAY b , uint32_t* clientVersion , uint32_t* protocolVersion , string* clientName , string* username ,string* password )
+bool Protocol::RECV_AUTHORIZING ( BYTEARRAY& b , uint32_t* clientVersion , uint32_t* protocolVersion , string* clientName , string* username ,string* password )
 {
 	if(b.size() < 12 )
 		return false;
@@ -143,7 +206,7 @@ bool Protocol::RECV_AUTHORIZING ( BYTEARRAY b , uint32_t* clientVersion , uint32
 	return true;
 }
 
-CGame* Protocol::RECV_CREATEREQUEST ( BYTEARRAY b , string streamer )
+CGame* Protocol::RECV_CREATEREQUEST ( BYTEARRAY& b , string streamer )
 {
 	if(b.size() < 20 )
 		return false;
@@ -154,23 +217,23 @@ CGame* Protocol::RECV_CREATEREQUEST ( BYTEARRAY b , string streamer )
 	string t_gameName = UTIL_ToString(b,t_pos); t_pos += t_gameName.size() + 1;
 	string t_players = UTIL_ToString(b,t_pos); t_pos += t_players.size() + 1;
 	uint32_t t_startTime =  UTIL_ByteArrayToUInt32(b,false,t_pos ); t_pos += 4;
-	BYTEARRAY t_version = UTIL_SubByteArray( b, t_pos, t_pos+8-1);t_pos += 12;
-	BYTEARRAY t_options = UTIL_SubByteArray( b, t_pos, t_pos+20-1);t_pos += 20;
+	BYTEARRAY t_version = UTIL_SubByteArray( b, t_pos, 8 );t_pos += 12;
+	BYTEARRAY t_options = UTIL_SubByteArray( b, t_pos, 20 );t_pos += 20;
 	string t_map = UTIL_ToString(b,t_pos); t_pos += t_map.size() + 1;
-	BYTEARRAY t_mapOptions = UTIL_SubByteArray( b, t_pos, t_pos+8-1);
+	BYTEARRAY t_mapOptions = UTIL_SubByteArray( b, t_pos, 8 );
 
 	CGame* t_game = new CGame(streamer,t_gameName,t_replayId,t_gameId,t_players,t_startTime,t_version,t_options,t_map,t_mapOptions);
 
 	return t_game;
 }
 
-bool Protocol::RECV_GAMEDETAILU ( BYTEARRAY b , CGame* game )
+bool Protocol::RECV_GAMEDETAILU ( BYTEARRAY& b , CGame* game )
 {
 	if(game->GetId() == UTIL_ByteArrayToUInt32(b,false) )
 	{
 		if(game->GetState() == STATUS_COMINGUPNEXT)
 		{
-			game->SetDetials( UTIL_SubByteArray( b, 4, b.size( ) ) );
+			game->SetDetials( UTIL_SubByteArray( b, 4 ) );
 			game->SetState(STATUS_ABOUTTOSTART);
 			return true;
 		}
@@ -184,7 +247,7 @@ bool Protocol::RECV_GAMEDETAILU ( BYTEARRAY b , CGame* game )
 }
 
 
-bool Protocol::RECV_GAMESTARTU ( BYTEARRAY b , CGame* game )
+bool Protocol::RECV_GAMESTARTU ( BYTEARRAY& b , CGame* game )
 {
 	if(game->GetId() == UTIL_ByteArrayToUInt32(b,false) )
 	{
@@ -206,7 +269,7 @@ bool Protocol::RECV_GAMESTARTU ( BYTEARRAY b , CGame* game )
 }
 
 
-bool Protocol::RECV_GAMEDATAU ( BYTEARRAY b , CGame* game )
+bool Protocol::RECV_GAMEDATAU ( BYTEARRAY& b , CGame* game )
 {
 	if( b.size() < 8 )
 		return false;
@@ -215,7 +278,8 @@ bool Protocol::RECV_GAMEDATAU ( BYTEARRAY b , CGame* game )
 	{
 		if(game->GetState() == STATUS_STARTED || game->GetState() == STATUS_LIVE)
 		{
-			game->SetGameData( UTIL_SubByteArray( b, 8, b.size() ) );
+			game->SetGameData( UTIL_SubByteArray( b, 8 ) );
+			game->SetLastedTime( UTIL_ByteArrayToUInt32( game->GetGameData( ).back( ), false ) );
 			game->SetState(STATUS_LIVE);
 
 			return true;
@@ -229,7 +293,7 @@ bool Protocol::RECV_GAMEDATAU ( BYTEARRAY b , CGame* game )
 	return false;
 }
 
-bool Protocol::RECV_GAMEEND ( BYTEARRAY b , CGame* game )
+bool Protocol::RECV_GAMEEND ( BYTEARRAY& b , CGame* game )
 {
 	if(game->GetId() == UTIL_ByteArrayToUInt32(b,false) )
 	{
@@ -248,13 +312,13 @@ bool Protocol::RECV_GAMEEND ( BYTEARRAY b , CGame* game )
 	return false;
 }
 
-bool Protocol::RECV_FINISHEDU ( BYTEARRAY b , CGame* game )
+bool Protocol::RECV_FINISHEDU ( BYTEARRAY& b , CGame* game )
 {
 	if(game->GetId() == UTIL_ByteArrayToUInt32(b,false) )
 	{
-		if(game->GetState() == STATUS_LIVE)
+		if(game->GetState() == STATUS_LIVE && game->GetGameData( ).size( ) == UTIL_ByteArrayToUInt32(b,false,4))
 		{
-			game->SetLastedTime(UTIL_ByteArrayToUInt32(b,false,4));
+			game->SetLastedTime( UTIL_ByteArrayToUInt32( game->GetGameData( ).back( ), false ) );
 			game->SetState(STATUS_COMPLETED);
 			return true;
 		}
@@ -266,6 +330,23 @@ bool Protocol::RECV_FINISHEDU ( BYTEARRAY b , CGame* game )
 	}
 	return false;
 }
+
+uint32_t Protocol::RECV_GETLIST ( BYTEARRAY& b )
+{
+	if(b.size( ) < 4)
+		return 0;
+
+	return UTIL_ByteArrayToUInt32(b,false);
+}
+
+uint32_t Protocol::RECV_GETDETAIL ( BYTEARRAY& b )
+{
+	if(b.size( ) < 4)
+		return 0;
+
+	return UTIL_ByteArrayToUInt32(b,false);
+}
+
 
 void Protocol::MakeLenth ( BYTEARRAY& b)
 {
