@@ -3,6 +3,7 @@
 #include "util.h"
 #include "game.h"
 #include "gamelist.h"
+#include "client.h"
 
 BYTEARRAY Protocol::SEND_HAND_SHAKING ( )
 {
@@ -145,7 +146,7 @@ BYTEARRAY Protocol::SEND_GAMELIST ( CGameList* gameList )
 	return result;
 }
 
-BYTEARRAY Protocol::SEND_GAMEDETAIL ( CGame* game )
+BYTEARRAY Protocol::SEND_DETAIL ( CGame* game )
 {
 	if(!game)
 		return BYTEARRAY( );
@@ -167,6 +168,127 @@ BYTEARRAY Protocol::SEND_GAMEDETAIL ( CGame* game )
 	UTIL_AppendByteArrayFast(result, game->GetOptions( ));
 	UTIL_AppendByteArray(result, game->GetMap( ));
 	UTIL_AppendByteArrayFast(result, game->GetMapOptions( ));
+
+	MakeLenth(result);
+	return result;
+}
+
+BYTEARRAY Protocol::SEND_SUBSCRIBGAME ( uint32_t gameId )
+{
+	BYTEARRAY result;
+
+	result.push_back(HEADER_1);
+	result.push_back(HEADER_2);
+	result.push_back(PACKET_TYPE_SUBSCRIBGAME);
+	result.push_back(0x00);
+	result.push_back(0x00);
+	UTIL_AppendByteArray(result, gameId, false);
+	result.push_back(1);
+
+	MakeLenth(result);
+	return result;
+}
+
+BYTEARRAY Protocol::SEND_UNSUBSCRIBGAME ( uint32_t gameId )
+{
+	BYTEARRAY result;
+
+	result.push_back(HEADER_1);
+	result.push_back(HEADER_2);
+	result.push_back(PACKET_TYPE_UNSUBSCRIBGAME);
+	result.push_back(0x00);
+	result.push_back(0x00);
+	UTIL_AppendByteArray(result, gameId, false);
+	result.push_back(0);
+
+	MakeLenth(result);
+	return result;
+}
+
+BYTEARRAY Protocol::SEND_GAMEDETAIL ( CGame* game )
+{
+	if(!game)
+		return BYTEARRAY( );
+
+	BYTEARRAY result;
+
+	result.push_back(HEADER_1);
+	result.push_back(HEADER_2);
+	result.push_back(PACKET_TYPE_GAMEDETAIL);
+	result.push_back(0x00);
+	result.push_back(0x00);
+	UTIL_AppendByteArray(result, game->GetId( ),false);
+	UTIL_AppendByteArray(result, game->GetDetails( ) );
+
+	MakeLenth(result);
+	return result;
+}
+
+BYTEARRAY Protocol::SEND_GAMEDSTART ( CGame* game )
+{
+	if(!game)
+		return BYTEARRAY( );
+
+	BYTEARRAY result;
+
+	result.push_back(HEADER_1);
+	result.push_back(HEADER_2);
+	result.push_back(PACKET_TYPE_GAMEDSTART);
+	result.push_back(0x00);
+	result.push_back(0x00);
+	UTIL_AppendByteArray(result, game->GetId( ), false);
+	UTIL_AppendByteArray(result, game->GetStartHead( ) );
+	
+	MakeLenth(result);
+	return result;
+}
+
+BYTEARRAY Protocol::SEND_GAMEDATA ( CGame* game, uint32_t packetNum, uint32_t start )
+{
+	if(!game)
+		return BYTEARRAY( );
+
+	BYTEARRAY result;
+	map<uint32_t, BYTEARRAY>::iterator iter = game->GetGameData( ).find( start );
+	if(iter == game->GetGameData( ).end() )
+		return BYTEARRAY( );
+
+	result.push_back(HEADER_1);
+	result.push_back(HEADER_2);
+	result.push_back(PACKET_TYPE_GAMEDATA);
+	result.push_back(0x00);
+	result.push_back(0x00);
+	UTIL_AppendByteArray(result, game->GetId( ), false);
+	UTIL_AppendByteArray(result, packetNum, false);
+	UTIL_AppendByteArray(result, (uint32_t)0, false);	//data lenth
+	UTIL_AppendByteArray(result, (uint32_t)start, false);	//start lenth
+	UTIL_AppendByteArray(result, (uint32_t)0, false);	//unknow 0x00 0x00
+	for(int i = 0; i < 10 && iter != game->GetGameData( ).end(); i++, iter++ )
+	{
+		UTIL_AppendByteArray(result, iter->second );
+	}
+
+	BYTEARRAY t_b = UTIL_CreateByteArray((uint16_t)(result.size( ) - 25),false);
+	result[13] = t_b[0];result[14] = t_b[1];
+
+	MakeLenth(result);
+	return result;
+}
+
+BYTEARRAY Protocol::SEND_FINISHED ( CGame* game )
+{
+	if(!game)
+		return BYTEARRAY( );
+
+	BYTEARRAY result;
+
+	result.push_back(HEADER_1);
+	result.push_back(HEADER_2);
+	result.push_back(PACKET_TYPE_GAMEDATA);
+	result.push_back(0x00);
+	result.push_back(0x00);
+	UTIL_AppendByteArray(result, game->GetId( ), false);
+	UTIL_AppendByteArray(result, (uint32_t)game->GetGameData( ).size( ), false);
 
 	MakeLenth(result);
 	return result;
@@ -234,7 +356,6 @@ bool Protocol::RECV_GAMEDETAILU ( BYTEARRAY& b , CGame* game )
 		if(game->GetState() == STATUS_COMINGUPNEXT)
 		{
 			game->SetDetials( UTIL_SubByteArray( b, 4 ) );
-			game->SetState(STATUS_ABOUTTOSTART);
 			return true;
 		}
 		else
@@ -249,13 +370,15 @@ bool Protocol::RECV_GAMEDETAILU ( BYTEARRAY& b , CGame* game )
 
 bool Protocol::RECV_GAMESTARTU ( BYTEARRAY& b , CGame* game )
 {
+	if( b.size( ) < 16)
+		return false;
+
 	if(game->GetId() == UTIL_ByteArrayToUInt32(b,false) )
 	{
 		if(game->GetState() == STATUS_ABOUTTOSTART)
 		{
-			game->SetStartHead( UTIL_SubByteArray( b, 0, 8 ) );
-			game->SetStartTime( UTIL_ByteArrayToUInt32(b,false,9) );
-			game->SetState( STATUS_STARTED );
+			game->SetStartHead( UTIL_SubByteArray( b, 4, 12 ) );
+			game->SetStartTime( UTIL_ByteArrayToUInt32(b,false,12) );
 
 			return true;
 		}
@@ -278,9 +401,7 @@ bool Protocol::RECV_GAMEDATAU ( BYTEARRAY& b , CGame* game )
 	{
 		if(game->GetState() == STATUS_STARTED || game->GetState() == STATUS_LIVE)
 		{
-			game->SetGameData( UTIL_SubByteArray( b, 8 ) );
-			game->SetLastedTime( UTIL_ByteArrayToUInt32( game->GetGameData( ).back( ), false ) );
-			game->SetState(STATUS_LIVE);
+			game->NewGameData( UTIL_SubByteArray( b, 8 ) );
 
 			return true;
 		}
@@ -298,7 +419,7 @@ bool Protocol::RECV_GAMEEND ( BYTEARRAY& b , CGame* game )
 	if(game->GetId() == UTIL_ByteArrayToUInt32(b,false) )
 	{
 		if(game->GetState() == STATUS_STARTED || game->GetState() == STATUS_LIVE)
-			{
+		{
 			game->SetState(STATUS_INCOMPLETE);
 
 			return true;
@@ -318,7 +439,6 @@ bool Protocol::RECV_FINISHEDU ( BYTEARRAY& b , CGame* game )
 	{
 		if(game->GetState() == STATUS_LIVE && game->GetGameData( ).size( ) == UTIL_ByteArrayToUInt32(b,false,4))
 		{
-			game->SetLastedTime( UTIL_ByteArrayToUInt32( game->GetGameData( ).back( ), false ) );
 			game->SetState(STATUS_COMPLETED);
 			return true;
 		}
@@ -347,9 +467,30 @@ uint32_t Protocol::RECV_GETDETAIL ( BYTEARRAY& b )
 	return UTIL_ByteArrayToUInt32(b,false);
 }
 
+uint32_t Protocol::RECV_SUBSCRIBGAME ( BYTEARRAY& b )
+{
+	if(b.size( ) < 8)
+		return 0;
+
+	return UTIL_ByteArrayToUInt32(b,false);
+}
+
+bool Protocol::RECV_GAMEDATA ( BYTEARRAY& b, uint32_t& packet, uint32_t& pos )
+{
+	if(b.size( ) < 12)
+		return false;
+
+	packet = UTIL_ByteArrayToUInt32( b, false, 4 );
+	pos = UTIL_ByteArrayToUInt32( b, false, 8 );
+
+	return true;
+}
 
 void Protocol::MakeLenth ( BYTEARRAY& b)
 {
+	if(b.size( ) < 5)
+		return ;
+
 	uint16_t len = b.size();
 	BYTEARRAY t_b = UTIL_CreateByteArray((uint16_t)len,false);
 	b[3]=t_b[0];b[4]=t_b[1];

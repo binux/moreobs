@@ -16,14 +16,19 @@ class Protocol;
 #define CLIENT_STATE_AUTHORIZING	0x01
 #define CLIENT_STATE_LOGIN			0x20
 #define CLIENT_STATE_UPDATA			0x11
+#define CLIENT_STATE_SUBSCRIBED		0x22
+#define CLIENT_STATE_GAMEDETAIL		0x24
+#define CLIENT_STATE_GAMEDSTART		0x25
+#define CLIENT_STATE_GAMEDATA		0x26
 
 class CGame;
 
 class CClient
 {
 private:
-	boost::asio::ip::tcp::socket * m_socket;
-	boost::asio::io_service * m_ioService;
+	boost::asio::ip::tcp::socket* m_socket;
+	boost::asio::io_service* m_ioService;
+	boost::asio::deadline_timer* m_timer;
 	unsigned char * t_buffer;
 	string b_receive;
 	string b_send;
@@ -35,23 +40,32 @@ private:
 	uint32_t m_type;
 	uint32_t m_lastRecv;
 	uint32_t m_lastSend;
+	uint32_t m_lastUpdateTime;
+	uint32_t m_gameDataPacketCount;
+	uint32_t m_gameDataPos;
 	uint32_t m_clientVersion;
 	uint32_t m_clientProtocolVersion;
 	string m_clientName;
 	string m_username;
 	string m_password;
+	
 public:
 	CClient(boost::asio::io_service* io_service , CMoreObs* moreobs);
 	~CClient();
 	void Run ( );
+	void Update ( const boost::system::error_code& error );
+	CGame* GetGame( )		{ return m_game; }
+	uint32_t GetState( )	{ return m_state; }
+
+	boost::asio::ip::tcp::socket* GetSocket( ) { return m_socket; }
+	string GetUserName( ) { return m_username; }
+
+private:
 	void handle_read ( unsigned char * t_buffer , const boost::system::error_code& error , std::size_t bytes_transferred );
 	void Send ( string s );
 	void Send ( BYTEARRAY b );
 	void ExtractPacket ( );
 	void DoSend ( );
-
-	boost::asio::ip::tcp::socket* GetSocket( ) { return m_socket; }
-	string GetUserName( ) { return m_username; }
 };
 
 #endif
