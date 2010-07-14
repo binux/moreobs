@@ -23,6 +23,7 @@ public:
 	string ircAdress;
 	string webAdress;
 	uint32_t uploadRate;
+	uint32_t updateTimer;
 	CGameList* gameList;
 
 	CMoreObs( CConfig *cfg );

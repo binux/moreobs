@@ -44,6 +44,7 @@
 
 class CGame;
 class CGameList;
+class CClient;
 
 class Protocol
 {
@@ -56,19 +57,28 @@ public :
 	BYTEARRAY SEND_CREATEREQUEST	( CGame* game );
 	BYTEARRAY SEND_FINISHEDU		( CGame* game );
 	BYTEARRAY SEND_GAMELIST			( CGameList* gameList );
+	BYTEARRAY SEND_DETAIL			( CGame* game );
+	BYTEARRAY SEND_SUBSCRIBGAME		( uint32_t gameId );
+	BYTEARRAY SEND_UNSUBSCRIBGAME	( uint32_t gameId );
 	BYTEARRAY SEND_GAMEDETAIL		( CGame* game );
+	BYTEARRAY SEND_GAMEDSTART		( CGame* game );
+	BYTEARRAY SEND_GAMEDATA			( CGame* game, uint32_t packetNum, uint32_t start );
+	BYTEARRAY SEND_FINISHED			( CGame* game );
 
 	//RECV
 	uint32_t RECV_NEGOTIATION		( BYTEARRAY& b );
-	bool RECV_AUTHORIZING			( BYTEARRAY& b , uint32_t* clientVersion , uint32_t* protocolVersion , string* clientName , string* username ,string* password );
-	CGame* RECV_CREATEREQUEST		( BYTEARRAY& b , string streamer );
-	bool RECV_GAMEDETAILU			( BYTEARRAY& b , CGame* game );
-	bool RECV_GAMESTARTU			( BYTEARRAY& b , CGame* game );
-	bool RECV_GAMEDATAU				( BYTEARRAY& b , CGame* game );
-	bool RECV_GAMEEND				( BYTEARRAY& b , CGame* game );
-	bool RECV_FINISHEDU				( BYTEARRAY& b , CGame* game );
+	bool RECV_AUTHORIZING			( BYTEARRAY& b, uint32_t* clientVersion, uint32_t* protocolVersion, string* clientName, string* username, string* password );
+	CGame* RECV_CREATEREQUEST		( BYTEARRAY& b, string streamer );
+	bool RECV_GAMEDETAILU			( BYTEARRAY& b, CGame* game );
+	bool RECV_GAMESTARTU			( BYTEARRAY& b, CGame* game );
+	bool RECV_GAMEDATAU				( BYTEARRAY& b, CGame* game );
+	bool RECV_GAMEEND				( BYTEARRAY& b, CGame* game );
+	bool RECV_FINISHEDU				( BYTEARRAY& b, CGame* game );
 	uint32_t RECV_GETLIST			( BYTEARRAY& b );
 	uint32_t RECV_GETDETAIL			( BYTEARRAY& b );
+	uint32_t RECV_SUBSCRIBGAME		( BYTEARRAY& b );
+	uint32_t RECV_UNSUBSCRIBGAME	( BYTEARRAY& b )	{ return RECV_SUBSCRIBGAME(b); }
+	bool RECV_GAMEDATA				( BYTEARRAY& b, uint32_t& packet, uint32_t& pos );
 
 private :
 	void MakeLenth ( BYTEARRAY& b);

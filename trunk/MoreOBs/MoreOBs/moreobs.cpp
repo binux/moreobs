@@ -17,6 +17,7 @@ CMoreObs::CMoreObs ( CConfig *cfg )
 	ircAdress = cfg->GetString("server_irc","none");
 	webAdress = cfg->GetString("server_web","binux.yo2.cn");
 	uploadRate = cfg->GetInt("server_uploadRate",1000000);
+	updateTimer = cfg->GetInt("update_frequency",10000);
 	gameList = new CGameList( );
 
 	try
