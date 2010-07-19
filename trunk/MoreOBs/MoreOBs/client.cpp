@@ -114,7 +114,7 @@ void CClient::handle_read ( unsigned char * t_buffer , const boost::system::erro
 	{
 		try
 		{
-			//DEBUG_Print(UTIL_CreateByteArray(t_buffer,bytes_transferred),DEBUG_LEVEL_PACKET);
+			DEBUG_Print(UTIL_CreateByteArray(t_buffer,bytes_transferred),DEBUG_LEVEL_PACKET_RECV);
 			m_lastRecv = GetTime();
 			b_receive.insert( b_receive.size(), (char *)t_buffer, bytes_transferred);
 			m_socket->async_read_some(boost::asio::buffer(t_buffer,1024),boost::bind(&CClient::handle_read,this,t_buffer,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred));
@@ -126,7 +126,7 @@ void CClient::handle_read ( unsigned char * t_buffer , const boost::system::erro
 	}
 	else
 	{
-		DEBUG_Print("[CLIENT] Connection closed cleanly by peer!",DEBUG_LEVEL_PACKET);
+		DEBUG_Print("[CLIENT] Connection closed cleanly by peer!",DEBUG_LEVEL_PACKET_RECV);
 		delete this;
 		return ;
 	}

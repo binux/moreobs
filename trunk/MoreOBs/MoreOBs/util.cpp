@@ -696,3 +696,12 @@ uint32_t UTIL_Factorial( uint32_t x )
 
 	return Factorial;
 }
+
+uint32_t UTIL_ToInt32IP( string& s)
+{
+	// think about 127.0.0.1 => 0x7f000001
+	uint32_t ip[4];
+	sscanf(s.c_str( ),"%d.%d.%d.%d",&ip[3],&ip[2],&ip[1],&ip[0]);
+
+	return ( ip[3] << 24 ) + ( ip[2] << 16 ) + ( ip[1] << 8 ) + ( ip[0] << 0 ) ;
+}

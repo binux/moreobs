@@ -52,6 +52,7 @@ typedef vector<unsigned char> BYTEARRAY;
 
 // time
 
+uint32_t GetCTime( );		// ctime
 uint32_t GetTime( );		// seconds
 uint32_t GetTicks( );		// milliseconds
 
@@ -60,6 +61,8 @@ uint32_t GetTicks( );		// milliseconds
 #define DEBUG_LEVEL_WARN        2
 #define DEBUG_LEVEL_MESSAGE     3
 #define DEBUG_LEVEL_PACKET      4
+#define DEBUG_LEVEL_PACKET_RECV 5
+#define DEBUG_LEVEL_PACKET_SEND 6
 
 void CONSOLE_Print( string message , uint32_t level = DEBUG_LEVEL_MESSAGE );
 void DEBUG_Print( string message , uint32_t level = DEBUG_LEVEL_MESSAGE );

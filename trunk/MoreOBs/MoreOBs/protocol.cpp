@@ -68,7 +68,7 @@ BYTEARRAY Protocol::SEND_SERVERDETAIL ( uint32_t maxUploadRate )
 	result.push_back(0x00);
 	result.push_back(0x00);
 	UTIL_AppendByteArray(result,maxUploadRate,false);
-	UTIL_AppendByteArray(result,GetTime(),false);
+	UTIL_AppendByteArray(result,GetCTime(),false);
 	
 	MakeLenth(result);
 	return result;
@@ -130,7 +130,7 @@ BYTEARRAY Protocol::SEND_GAMELIST ( CGameList* gameList )
 	result.push_back(PACKET_TYPE_GETLIST);
 	result.push_back(0x00);
 	result.push_back(0x00);
-	UTIL_AppendByteArray(result, GetTime(), false);
+	UTIL_AppendByteArray(result, GetCTime(), false);
 	UTIL_AppendByteArray(result, gameList->GetSize( ), false);
 	UTIL_AppendByteArray(result, gameList->GetSize( ), false);
 
