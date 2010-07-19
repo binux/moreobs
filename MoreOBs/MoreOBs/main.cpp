@@ -27,36 +27,19 @@ uint32_t gLogMethod;
 ofstream *gLog = NULL;
 CMoreObs *gMoreObs = NULL;
 
+uint32_t GetCTime( )
+{
+	return time( NULL );
+}
+
 uint32_t GetTime( )
 {
-	return time (NULL);
+	return GetTicks( ) / 1000;
 }
 
 uint32_t GetTicks( )
 {
-#ifdef WIN32
-	// don't use GetTickCount anymore because it's not accurate enough (~16ms resolution)
-	// don't use QueryPerformanceCounter anymore because it isn't guaranteed to be strictly increasing on some systems and thus requires "smoothing" code
-	// use timeGetTime instead, which typically has a high resolution (5ms or more) but we request a lower resolution on startup
-
-	return timeGetTime( );
-#elif __APPLE__
-	uint64_t current = mach_absolute_time( );
-	static mach_timebase_info_data_t info = { 0, 0 };
-	// get timebase info
-	if( info.denom == 0 )
-		mach_timebase_info( &info );
-	uint64_t elapsednano = current * ( info.numer / info.denom );
-	// convert ns to ms
-	return elapsednano / 1e6;
-#else
-	uint32_t ticks;
-	struct timespec t;
-	clock_gettime( CLOCK_MONOTONIC, &t );
-	ticks = t.tv_sec * 1000;
-	ticks += t.tv_nsec / 1000000;
-	return ticks;
-#endif
+	return clock( );
 }
 
 void CONSOLE_Print( string message , uint32_t level )
@@ -64,21 +47,7 @@ void CONSOLE_Print( string message , uint32_t level )
 	if(level>debug_level)
 		return ;
 
-	switch(level)
-	{
-		case DEBUG_LEVEL_ERROR:
-			cout << "<ERROR>  " ;
-			break;
-		case DEBUG_LEVEL_WARN:
-			cout << "<WARN>   " ;
-			break;
-		case DEBUG_LEVEL_MESSAGE:
-			cout << "<MESSAGE>" ;
-			break;
-		case DEBUG_LEVEL_PACKET:
-			cout << "<PACKET> " ;
-			break;
-	}
+	cout << level << ">";
 	cout << message << endl;
 
 	// logging
@@ -96,24 +65,9 @@ void CONSOLE_Print( string message , uint32_t level )
 				string Time = asctime( localtime( &Now ) );
 
 				// erase the newline
-
 				Time.erase( Time.size( ) - 1 );
+				Log << level << ">";
 				Log << "[" << Time << "]";
-				switch(level)
-				{
-					case DEBUG_LEVEL_ERROR:
-						Log << "<ERROR>  " ;
-						break;
-					case DEBUG_LEVEL_WARN:
-						Log << "<WARN>   " ;
-						break;
-					case DEBUG_LEVEL_MESSAGE:
-						Log << "<MESSAGE>" ;
-						break;
-					case DEBUG_LEVEL_PACKET:
-						Log << "<PACKET> " ;
-						break;
-				}
 				Log << message << endl;
 				Log.close( );
 			}
@@ -126,24 +80,9 @@ void CONSOLE_Print( string message , uint32_t level )
 				string Time = asctime( localtime( &Now ) );
 
 				// erase the newline
-
 				Time.erase( Time.size( ) - 1 );
+				*gLog << level << ">";
 				*gLog << "[" << Time << "]" ;
-				switch(level)
-				{
-					case DEBUG_LEVEL_ERROR:
-						*gLog << "<ERROR>  " ;
-						break;
-					case DEBUG_LEVEL_WARN:
-						*gLog << "<WARN>   " ;
-						break;
-					case DEBUG_LEVEL_MESSAGE:
-						*gLog << "<MESSAGE>" ;
-						break;
-					case DEBUG_LEVEL_PACKET:
-						*gLog << "<PACKET> " ;
-						break;
-				}
 				*gLog << message << endl;
 				gLog->flush( );
 			}
@@ -156,23 +95,7 @@ void DEBUG_Print( string message , uint32_t level )
 	if(level>debug_level)
 		return ;
 
-	switch(level)
-	{
-		case DEBUG_LEVEL_ERROR:
-			cout << "<ERROR>  " ;
-			break;
-		case DEBUG_LEVEL_WARN:
-			cout << "<WARN>   " ;
-			break;
-		case DEBUG_LEVEL_MESSAGE:
-			cout << "<MESSAGE>" ;
-			break;
-		case DEBUG_LEVEL_PACKET:
-			cout << "<PACKET> " ;
-			break;
-		default :
-			return ;
-	}
+	cout << level << ">";
 	cout << message << endl;
 }
 
@@ -183,27 +106,62 @@ void DEBUG_Print( BYTEARRAY b , uint32_t level )
 
 	switch(level)
 	{
-		case DEBUG_LEVEL_ERROR:
-			cout << "<ERROR>\n" ;
+		case DEBUG_LEVEL_PACKET_RECV:
+			cout << "<<<IN\n" ;
 			break;
-		case DEBUG_LEVEL_WARN:
-			cout << "<WARN>\n" ;
-			break;
-		case DEBUG_LEVEL_MESSAGE:
-			cout << "<MESSAGE>\n" ;
-			break;
-		case DEBUG_LEVEL_PACKET:
-			cout << "<PACKET>\n" ;
+		case DEBUG_LEVEL_PACKET_SEND:
+			cout << "   OUT>>>\n" ;
 			break;
 		default :
-			return ;
+			cout << level << "\n" ;
+			break;
 	}
-	cout << "{ ";
 
-	for( unsigned int i = 0; i < b.size( ); i++ )
-		cout << hex << (int)b[i] << " ";
+	unsigned int i = 0;
+	while( i < b.size( ) )
+	{
+		switch(level)
+		{
+			case DEBUG_LEVEL_PACKET_RECV:
+				cout << "" ;
+				break;
+			case DEBUG_LEVEL_PACKET_SEND:
+				cout << "   " ;
+				break;
+			default :
+				cout << level << ">" ;
+				break;
+		}
 
-	cout << "}" << endl;
+		unsigned int j;
+		for( j = 0; j < 8; j++ )
+		{
+			if(j+i < b.size( ))
+				cout << setfill('0') << setw(2) << hex << (int)b[i+j] << " ";
+			else
+				cout << "   ";
+		}
+		cout << " ";
+		for( j = 8; j < 16; j++ )
+		{
+			if(j+i < b.size( ))
+				cout << setfill('0') << setw(2) << hex << (int)b[i+j] << " ";
+			else
+				cout << "   ";
+		}
+		cout << "  ";
+
+		for( j = 0; j < 16 && i < b.size( ); j++,i++ )
+		{
+			if(j % 8 == 0)
+				cout << " ";
+			if((int)b[i] >= 32 && (int)b[i] < 127)
+				cout << b[i];
+			else
+				cout << ".";
+		}
+		cout << endl;
+	}
 }
 
 //=============================================================================================================
@@ -260,7 +218,7 @@ int main(int argc, char* argv[])
 
 	CConfig cfg;
 	cfg.Read(cfgFile);
-	debug_level = cfg.GetInt( "debug_level" , 4 );
+	debug_level = cfg.GetInt( "debug_level" , 99 );
 	gLogFile = cfg.GetString( "log", string( ) );
 	gLogMethod = cfg.GetInt( "logmethod", 1 );
 

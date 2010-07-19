@@ -15,7 +15,7 @@
    limitations under the License.
 
    CODE PORTED FROM THE ORIGINAL GHOST PROJECT: http://ghost.pwner.org/
-
+   MODIFIED BY Binux@2010
 */
 
 #ifndef UTIL_H
@@ -46,7 +46,6 @@ BYTEARRAY UTIL_SubByteArray( BYTEARRAY &b, unsigned int start, int size = -1 );
 
 // conversions
 
-string UTIL_ToString( BYTEARRAY &b, unsigned int start );
 string UTIL_ToString( unsigned long i );
 string UTIL_ToString( unsigned short i );
 string UTIL_ToString( unsigned int i );
@@ -90,5 +89,10 @@ uint32_t UTIL_Factorial( uint32_t x );
 
 #define nCr(n, r) (UTIL_Factorial(n) / UTIL_Factorial((n)-(r)) / UTIL_Factorial(r))
 #define nPr(n, r) (UTIL_Factorial(n) / UTIL_Factorial((n)-(r)))
+
+// news
+
+string UTIL_ToString( BYTEARRAY &b, unsigned int start = 0 );
+uint32_t UTIL_ToInt32IP( string& s);
 
 #endif
