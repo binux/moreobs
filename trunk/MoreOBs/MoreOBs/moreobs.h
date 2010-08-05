@@ -1,7 +1,7 @@
 #ifndef MOREOBS_H
 #define MOREOBS_H
 
-#include <boost\asio.hpp>
+#include <boost/asio.hpp>
 
 class CConfig;
 class CClient;
