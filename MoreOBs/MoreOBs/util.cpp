@@ -142,7 +142,7 @@ void UTIL_AppendByteArray( BYTEARRAY &b, string append, bool terminator )
 
 	b.insert( b.end( ), append.begin( ), append.end( ) );
 
-	if( terminator && append.back( ) != 0 )
+	if( terminator && *(append.end( )) != 0 )
 		b.push_back( 0 );
 }
 
@@ -152,7 +152,7 @@ void UTIL_AppendByteArrayFast( BYTEARRAY &b, string &append, bool terminator )
 
 	b.insert( b.end( ), append.begin( ), append.end( ) );
 
-	if( terminator && append.back( ) != 0 )
+	if( terminator && *(append.end( )) != 0 )
 		b.push_back( 0 );
 }
 

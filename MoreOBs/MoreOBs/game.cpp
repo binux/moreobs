@@ -30,14 +30,14 @@ uint32_t CGame::GetId ( )
 		return m_originalId;
 }
 
-void CGame::SetDetials ( BYTEARRAY& b )	
+void CGame::SetDetials ( BYTEARRAY b )	
 {
 	m_details.assign( b.begin() , b.end() ); 
 	m_state = STATUS_ABOUTTOSTART;
 	m_lastUpdateTime = GetTime( ); 
 }
 
-void CGame::SetStartHead ( BYTEARRAY& b )	
+void CGame::SetStartHead ( BYTEARRAY b )	
 { 
 	m_startHead.assign( b.begin() , b.end() ); 
 	m_state = STATUS_STARTED;

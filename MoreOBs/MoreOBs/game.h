@@ -56,8 +56,8 @@ public:
 	BYTEARRAY& GetStartHead ( )	{ return m_startHead; }
 	map<uint32_t, BYTEARRAY>& GetGameData ( )	{ return m_data; }
 
-	void SetDetials ( BYTEARRAY& b );
-	void SetStartHead ( BYTEARRAY& b );
+	void SetDetials ( BYTEARRAY b );
+	void SetStartHead ( BYTEARRAY b );
 	void SetState ( uint32_t i );
 	void SetStartTime ( uint32_t i );
 	void SetLastedTime ( uint32_t i );
