@@ -136,10 +136,13 @@ BYTEARRAY Protocol::SEND_GAMELIST ( CGameList* gameList )
 
     foreach( CGame* game, gameList->GetGameList( ) )
     {
-        UTIL_AppendByteArray(result, game->GetId( ),false);
-        result.push_back((unsigned char)game->GetState( ));
-        UTIL_AppendByteArray(result, game->GetStartTime( ), false);
-        UTIL_AppendByteArray(result,game->GetGameName( ));
+	//if( game->GetState( ) < STATUS_DELETE )
+	{
+	    UTIL_AppendByteArray(result, game->GetId( ),false);
+	    result.push_back((unsigned char)game->GetState( ));
+	    UTIL_AppendByteArray(result, game->GetStartTime( ), false);
+	    UTIL_AppendByteArray(result,game->GetGameName( ));
+	}
     }
 
     MakeLenth(result);

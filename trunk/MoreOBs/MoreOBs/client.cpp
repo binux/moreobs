@@ -15,12 +15,11 @@ CClient::CClient(boost::asio::io_service* io_service , CMoreObs* moreobs)
     m_moreobs = moreobs;
 
     m_socket = new boost::asio::ip::tcp::socket(*io_service);
-    m_timer = new boost::asio::deadline_timer(*io_service);
     t_buffer = new unsigned char[1024];
 
     m_protocol = m_moreobs->protocol;
     m_game = NULL;
-    m_state = CLIENT_STATE_HAND_SHAKING;
+    m_state = CLIENT_STATE_NOT_READY;
     m_type = CLIENT_TYPE_UNDEFINE;
     m_lastRecv = GetTime();
     m_lastSend = GetTime();
@@ -43,13 +42,6 @@ CClient::~CClient ( )
         delete m_socket;
     }
 
-    if(m_timer)
-    {
-        m_timer->cancel( );
-        delete m_timer;
-    }
-
-
     //if( m_state == CLIENT_STATE_SUBSCRIBED && m_game )
     //{
     //    m_game->RemoveClient( this );
@@ -59,53 +51,78 @@ CClient::~CClient ( )
 void CClient::Run ( )
 {
     m_socket->async_read_some(boost::asio::buffer(t_buffer,1024),boost::bind(&CClient::handle_read,this,t_buffer,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred));
+    m_state = CLIENT_STATE_HAND_SHAKING;
 }
 
-void CClient::Update ( const boost::system::error_code& error )
+void CClient::Update ( ) 
 {
-    if(error)
-        return ;
-
-    if( m_state >= CLIENT_STATE_SUBSCRIBED && m_game && m_lastUpdateTime < m_game->GetLastUpdateTime( ) )
+    if( m_game )
     {
-        //m_lastUpdateTime = GetTime ( );
+	//subscribed game update
+	if(( m_state == CLIENT_STATE_SUBSCRIBED || 
+	     m_state == CLIENT_STATE_GAMEDETAIL || 
+	     m_state == CLIENT_STATE_GAMEDSTART || 
+	     m_state == CLIENT_STATE_GAMEDATA ) 
+	&& ( m_lastUpdateTime < m_game->GetLastUpdateTime( ) ))
+	{
+	    //m_lastUpdateTime = GetTime ( );
 
-        switch( m_state )
-        {
-        case CLIENT_STATE_SUBSCRIBED:
-            if( m_game->GetState( ) >= STATUS_ABOUTTOSTART)
-            {
-                Send( m_protocol->SEND_GAMEDETAIL( m_game ) );
-                m_state = CLIENT_STATE_GAMEDETAIL;
-            }
-        case CLIENT_STATE_GAMEDETAIL:
-            if( m_game->GetState( ) >= STATUS_STARTED )
-            {
-                Send( m_protocol->SEND_GAMEDSTART( m_game ) );
-                m_state = CLIENT_STATE_GAMEDATA;
-            }
-        case CLIENT_STATE_GAMEDSTART:
-        case CLIENT_STATE_GAMEDATA:
-            if( m_game->GetState( ) >= STATUS_LIVE )
-            {
-                BYTEARRAY t_buffer = m_protocol->SEND_GAMEDATA( m_game, m_gameDataPacketCount, m_gameDataPos );
-                if(!t_buffer.empty( ))
-                    Send( t_buffer );
-                else if( m_game->GetState( ) == STATUS_COMPLETED )
-                {
-                    Send( m_protocol->SEND_FINISHED( m_game ) );
-                }
-            }
-            break;
-        default :
-            break;
-        }
+	    switch( m_state )
+	    {
+	    case CLIENT_STATE_SUBSCRIBED:
+		if( m_game->GetState( ) >= STATUS_ABOUTTOSTART)
+		{
+		    Send( m_protocol->SEND_GAMEDETAIL( m_game ) );
+		    m_state = CLIENT_STATE_GAMEDETAIL;
+		}
+	    case CLIENT_STATE_GAMEDETAIL:
+		if( m_game->GetState( ) >= STATUS_STARTED )
+		{
+		    Send( m_protocol->SEND_GAMEDSTART( m_game ) );
+		    m_state = CLIENT_STATE_GAMEDATA;
+		}
+	    case CLIENT_STATE_GAMEDSTART:
+	    case CLIENT_STATE_GAMEDATA:
+		if( m_game->GetState( ) >= STATUS_LIVE )
+		{
+		    BYTEARRAY t_buffer = m_protocol->SEND_GAMEDATA( m_game, m_gameDataPacketCount, m_gameDataPos );
+		    if(!t_buffer.empty( ))
+			Send( t_buffer );
+		    else if( m_game->GetState( ) == STATUS_COMPLETED )
+		    {
+			Send( m_protocol->SEND_FINISHED( m_game ) );
+		    }
+		}
+		break;
+	    default :
+		break;
+	    }
+	}
 
-        DoSend ( );
+	if( m_game->GetDelete( ) )
+	{
+            Send( m_protocol->SEND_UNSUBSCRIBGAME( m_game->GetId( ) ) );
+	    m_state = CLIENT_STATE_LOGIN;
+	    m_game = NULL;
+	}
     }
 
-    m_timer->expires_from_now( boost::posix_time::milliseconds( m_moreobs->updateTimer ) );
-    m_timer->async_wait(boost::bind(&CClient::Update,this,boost::asio::placeholders::error));
+    DoSend ( );
+}
+
+void CClient::Close ( )
+{
+    if(m_socket)
+    {
+        m_socket->close( );
+    }
+
+    if(m_game)
+    {
+	m_game = NULL;
+    }
+
+    m_state = CLIENT_STATE_DELETE_READY;
 }
 
 void CClient::handle_read ( unsigned char * t_buffer , const boost::system::error_code& error , std::size_t bytes_transferred )
@@ -126,8 +143,8 @@ void CClient::handle_read ( unsigned char * t_buffer , const boost::system::erro
     }
     else
     {
-        DEBUG_Print("[CLIENT] Connection closed cleanly by peer!",DEBUG_LEVEL_PACKET_RECV);
-        delete this;
+        CONSOLE_Print("[CLIENT] Connection closed cleanly by peer!",DEBUG_LEVEL_PACKET_RECV);
+        Close( );
         return ;
     }
 
@@ -162,7 +179,7 @@ void CClient::ExtractPacket( )
         }
 	else
 	{
-	    delete this;
+	    Close( );
 	}
     }
 
@@ -270,8 +287,6 @@ void CClient::ExtractPacket( )
                     if( m_game )
                     {
                         m_state = CLIENT_STATE_SUBSCRIBED;
-                        m_timer->expires_from_now( boost::posix_time::milliseconds( 50 ) );
-                        m_timer->async_wait(boost::bind(&CClient::Update,this,boost::asio::placeholders::error));
                         Send( m_protocol->SEND_SUBSCRIBGAME( m_game->GetId( ) ));
                     }
                     else
@@ -284,7 +299,6 @@ void CClient::ExtractPacket( )
                     Send( m_protocol->SEND_UNSUBSCRIBGAME( m_game->GetId( ) ) );
                     m_game = NULL;
                     m_state = CLIENT_STATE_LOGIN;
-                    m_timer->cancel( );
                 }
                     break;
                 case PACKET_TYPE_GAMEDETAIL      :
@@ -294,12 +308,12 @@ void CClient::ExtractPacket( )
                 case PACKET_TYPE_GAMEDATA        :
                     m_protocol->RECV_GAMEDATA( t_packet, m_gameDataPacketCount, m_gameDataPos );
                     m_gameDataPacketCount++;
-                    Update( boost::system::error_code() );
+                    Update( );
                     break;
                 case PACKET_TYPE_FINISHED        :
                     break;
                 default :
-                    DEBUG_Print("[CLIENT] unknow packet type : " + UTIL_ToString(t_bytes[2]) ,DEBUG_LEVEL_ERROR );
+                    CONSOLE_Print("[CLIENT] unknow packet type : " + UTIL_ToString(t_bytes[2]) ,DEBUG_LEVEL_ERROR );
                     break;
             }
             try
@@ -322,7 +336,12 @@ void CClient::ExtractPacket( )
 
 void CClient::DoSend ( )
 {
-    m_lastSend = GetTime();
+    if( m_state == CLIENT_STATE_NOT_READY )
+	return ;
+
     while(!b_send.empty())
+    {
+	m_lastSend = GetTime();
         b_send = b_send.substr( m_socket->send( boost::asio::buffer(b_send) ) );
+    }
 }
