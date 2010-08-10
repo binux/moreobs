@@ -22,7 +22,7 @@ void CGameList::Update ( )
     {
         if( game->GetDeleteReady( ) )
         {
-            RemoveGame( game );
+            Remove( game );
             delete game;
         }
 	else
@@ -32,13 +32,13 @@ void CGameList::Update ( )
     }
 }
 
-uint32_t CGameList::NewGame ( CGame* game )
+uint32_t CGameList::New ( CGame* game )
 {
     m_list.push_back( game );
     return m_id++;
 }
 
-bool CGameList::RemoveGame ( CGame* game )
+bool CGameList::Remove ( CGame* game )
 {
     m_list.remove( game );
     return true;

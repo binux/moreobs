@@ -134,7 +134,7 @@ BYTEARRAY Protocol::SEND_GAMELIST ( CGameList* gameList )
     UTIL_AppendByteArray(result, gameList->GetSize( ), false);
     UTIL_AppendByteArray(result, gameList->GetSize( ), false);
 
-    foreach( CGame* game, gameList->GetGameList( ) )
+    foreach( CGame* game, gameList->GetList( ) )
     {
 	//if( game->GetState( ) < STATUS_DELETE )
 	{

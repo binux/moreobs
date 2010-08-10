@@ -56,8 +56,9 @@ public:
     void Run ( );
     void Update ( );
     void Close ( );
-    CGame* GetGame( )        { return m_game; }
-    uint32_t GetState( )    { return m_state; }
+    CGame* GetGame( )		{ return m_game; }
+    uint32_t GetState( )	{ return m_state; }
+    uint32_t GetDeleteReady( )	{ return m_state == CLIENT_STATE_DELETE_READY; }
 
     boost::asio::ip::tcp::socket* GetSocket( ) { return m_socket; }
     string GetUserName( ) { return m_username; }

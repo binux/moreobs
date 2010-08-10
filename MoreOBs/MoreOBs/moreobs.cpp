@@ -3,6 +3,7 @@
 #include "moreobs.h"
 #include "client.h"
 #include "protocol.h"
+#include "game.h"
 #include "gamelist.h"
 #include "clientlist.h"
 #include "control.h"
@@ -13,7 +14,7 @@
 CMoreObs::CMoreObs ( CConfig *cfg )
 {
     m_port = cfg->GetInt("listen_port",10383);
-    m_controlPort = cfg->GetInt("control_port",230);
+    m_controlPort = cfg->GetInt("control_port",10230);
     protocol = new Protocol( );
     serverName = cfg->GetString("server_name","MoreObs");
     about = cfg->GetString("server_about","A personal WTV server!");
@@ -21,9 +22,10 @@ CMoreObs::CMoreObs ( CConfig *cfg )
     ircAdress = cfg->GetString("server_irc","none");
     webAdress = cfg->GetString("server_web","binux.yo2.cn");
     uploadRate = cfg->GetInt("server_uploadRate",1000000);
-    updateTimer = cfg->GetInt("update_frequency",10000);
+    updateTimer = cfg->GetInt("update_frequency",1000);
     gameList = new CGameList( );
     clientList = new CClientList( );
+    shutdown = false;
 
     m_ioService = new boost::asio::io_service;
     m_acceptor = new boost::asio::ip::tcp::acceptor(*m_ioService,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(),m_port));
@@ -37,15 +39,10 @@ CMoreObs::~CMoreObs(void)
     delete protocol;
     delete gameList;
     delete clientList;
-   
-    if(m_ioService)
-	delete m_ioService;
-    if(m_acceptor)
-	delete m_acceptor;
-    if(m_timer)
-	delete m_timer;
-    if(control)
-	delete control;
+    delete control;
+    delete m_acceptor;
+    delete m_timer;
+    delete m_ioService;
 }
 
 void CMoreObs::Run ( )
@@ -56,7 +53,8 @@ void CMoreObs::Run ( )
         CClient* t_socket = new CClient(m_ioService,this);
 	clientList->New(t_socket);
         m_acceptor->async_accept(*t_socket->GetSocket(),boost::bind(&CMoreObs::handle_accept,this,t_socket,boost::asio::placeholders::error));
-	m_timer->async_wait(boost::bind(&CMoreObs::Update,this,boost::asio::placeholders::error));
+	m_timer->expires_from_now( boost::posix_time::milliseconds( updateTimer ) );
+	m_timer->async_wait(boost::bind(&CMoreObs::handle_timer,this,boost::asio::placeholders::error));
     }
     catch(boost::system::system_error& e)
     {
@@ -67,10 +65,13 @@ void CMoreObs::Run ( )
     m_ioService->run();
 }
 
-bool CMoreObs::Update( const boost::system::error_code& error )
+bool CMoreObs::Update( )
 {
-    if(error)
+    if(shutdown)
+    {
+	m_ioService->stop( );
 	return false;
+    }
 
     clientList->Update( );
     gameList->Update( );
@@ -84,7 +85,7 @@ void CMoreObs::handle_accept( CClient * t_socket , const boost::system::error_co
         try
         {
             t_socket->Run();
-            CONSOLE_Print("[MOREOBS] Get a new client !",DEBUG_LEVEL_PACKET);
+            //CONSOLE_Print("[MOREOBS] Get a new client from [" + t_socket->GetSocket( )->remote_endpoint( ).address( ).to_string( ) + "]",DEBUG_LEVEL_MESSAGE);
             CClient* t_socket = new CClient(m_ioService,this);
 	    clientList->New(t_socket);
             m_acceptor->async_accept(*t_socket->GetSocket(),boost::bind(&CMoreObs::handle_accept,this,t_socket,boost::asio::placeholders::error));
@@ -94,4 +95,12 @@ void CMoreObs::handle_accept( CClient * t_socket , const boost::system::error_co
             CONSOLE_Print(string("[MOREOBS]") + e.what() , DEBUG_LEVEL_ERROR);
         }
     }
+}
+
+void CMoreObs::handle_timer( const boost::system::error_code& error )
+{
+    Update( );
+    
+    m_timer->expires_from_now( boost::posix_time::milliseconds( updateTimer ) );
+    m_timer->async_wait(boost::bind(&CMoreObs::handle_timer,this,boost::asio::placeholders::error));
 }
