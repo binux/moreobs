@@ -31,12 +31,14 @@ public:
 	CGameList* gameList;
 	CClientList* clientList;
 	CControl* control;
+	bool shutdown;
 
 	CMoreObs( CConfig *cfg );
 	~CMoreObs(void);
 	void Run ( );
-	bool Update( const boost::system::error_code& error );
+	bool Update( );
 	void handle_accept(  CClient * t_socket , const boost::system::error_code& error );
+	void handle_timer( const boost::system::error_code& error );
 };
 
 #endif

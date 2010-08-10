@@ -90,7 +90,7 @@ uint32_t UTIL_Factorial( uint32_t x );
 #define nCr(n, r) (UTIL_Factorial(n) / UTIL_Factorial((n)-(r)) / UTIL_Factorial(r))
 #define nPr(n, r) (UTIL_Factorial(n) / UTIL_Factorial((n)-(r)))
 
-// news
+// new
 
 string UTIL_ToString( BYTEARRAY &b, unsigned int start = 0 );
 uint32_t UTIL_ToInt32IP( string& s);

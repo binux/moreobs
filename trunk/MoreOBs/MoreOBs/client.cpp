@@ -50,6 +50,7 @@ CClient::~CClient ( )
 
 void CClient::Run ( )
 {
+    CONSOLE_Print("[CLIENT] Get a new client from [" + m_socket->remote_endpoint( ).address( ).to_string( ) + "]",DEBUG_LEVEL_MESSAGE);
     m_socket->async_read_some(boost::asio::buffer(t_buffer,1024),boost::bind(&CClient::handle_read,this,t_buffer,boost::asio::placeholders::error,boost::asio::placeholders::bytes_transferred));
     m_state = CLIENT_STATE_HAND_SHAKING;
 }
@@ -221,7 +222,7 @@ void CClient::ExtractPacket( )
                     if(m_type == CLIENT_TYPE_RECORDER && m_state == CLIENT_STATE_LOGIN )
                     {
                         m_game = m_protocol->RECV_CREATEREQUEST(t_packet , m_username );
-                        m_game->SetGameId( m_moreobs->gameList->NewGame(m_game) );
+                        m_game->SetGameId( m_moreobs->gameList->New(m_game) );
                         if(m_game)
                         {
                             CONSOLE_Print("[CLIENT] created a new game :" + m_game->GetGameName( ) , DEBUG_LEVEL_MESSAGE);

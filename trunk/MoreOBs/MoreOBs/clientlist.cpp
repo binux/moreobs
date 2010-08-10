@@ -18,7 +18,15 @@ void CClientList::Update ( )
 {
     foreach(CClient* client, m_list)
     {
-	client->Update( );
+	if( client->GetDeleteReady( ) )
+	{
+	    Remove( client );
+	    delete client;
+	}
+	else
+	{
+	    client->Update( );
+	}
     }
 }
 

@@ -263,7 +263,7 @@ int main(int argc, char* argv[])
 	gMoreObs->Run();
 
 	//shutdown
-	CONSOLE_Print( "[GHOST] shutting down" );
+	CONSOLE_Print( "[MAIN] shutting down", DEBUG_LEVEL_MESSAGE );
 	delete gMoreObs;
 	gMoreObs = NULL;
 

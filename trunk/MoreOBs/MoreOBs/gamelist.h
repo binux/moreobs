@@ -12,10 +12,10 @@ public:
 	CGameList ( );
 	~CGameList ( );
 	void Update ( );
-	uint32_t NewGame ( CGame* game );
-	bool RemoveGame ( CGame* game );
+	uint32_t New ( CGame* game );
+	bool Remove ( CGame* game );
 	CGame* FindGameById ( uint32_t id );
-	list<CGame*>& GetGameList ( )		{ return m_list; }
+	list<CGame*>& GetList ( )		{ return m_list; }
 	uint32_t GetSize ( )				{ return m_list.size( ); }
 };
 

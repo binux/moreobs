@@ -705,3 +705,4 @@ uint32_t UTIL_ToInt32IP( string& s)
 
 	return ( ip[3] << 24 ) + ( ip[2] << 16 ) + ( ip[1] << 8 ) + ( ip[0] << 0 ) ;
 }
+

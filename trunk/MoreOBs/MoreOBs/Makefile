@@ -29,7 +29,7 @@ config.o: includes.h config.h
 game.o: includes.h client.h game.h util.h
 gamelist.o: includes.h gamelist.h game.h
 main.o: includes.h config.h moreobs.h
-moreobs.o: includes.h config.h moreobs.h client.h protocol.h gamelist.h
+moreobs.o: includes.h config.h moreobs.h client.h protocol.h gamelist.h game.h
 protocol.o: includes.h protocol.h util.h game.h gamelist.h client.h
 util.o: includes.h util.h
-control.o: includes.h control.h util.h game.h gamelist.h moreobs.h
+control.o: includes.h control.h util.h game.h gamelist.h moreobs.h config.h clientlist.h client.h
